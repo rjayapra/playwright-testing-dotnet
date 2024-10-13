@@ -1,0 +1,50 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline to run Playwright tests and publish results
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    command: 'restore'
+    restoreSolution: '**/*.sln'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Dotnet build'
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+
+- script: pwsh bin/Debug/net8.0/playwright.ps1 install --with-deps
+  displayName: 'Install Playwright with dependencies'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Dotnet test'
+  inputs:
+    command: 'test'
+    projects: '**/*.csproj'
+    arguments: '--logger trx --results-directory $(System.DefaultWorkingDirectory)/test-results'
+
+- task: PublishTestResults@2
+  displayName: 'Publish test results'
+  inputs:
+    searchFolder: 'test-results'
+    testResultsFormat: 'JUnit'
+    testResultsFiles: $(System.DefaultWorkingDirectory)/test-results/*.xml
+    mergeTestResults: true
+    failTaskOnFailedTests: true
+    testRunTitle: 'My End-To-End Tests'
+  condition: succeededOrFailed()
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: playwright-report
+    artifact: playwright-report
+    publishLocation: 'pipeline'
+  condition: succeededOrFailed()
