@@ -20,10 +20,16 @@ dotnet test --filter FullyQualifiedName~Namespace.ClassName.MethodName
 
 ### Running Tests in Parallel
 
-Playwright can run tests in parallel to speed up the execution. You can configure the degree of parallelism using the `--parallel` option.
+Playwright can run tests in parallel to speed up the execution. You can configure the degree of parallelism with multiple worker option.
 
-```sh
-dotnet test --parallel 4
+```pwsh
+dotnet test -- MSTest.Parallelize.Workers=5
+```
+
+or 
+
+```
+dotnet test -- NUnit.NumberOfTestWorkers=5
 ```
 
 ## Debugging Tests
